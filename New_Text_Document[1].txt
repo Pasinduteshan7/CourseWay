@@ -1,0 +1,12 @@
+docker ps 
+
+docker exec -it mongo mongosh
+
+show dbs
+
+
+use user_db
+
+show collections
+
+db.users.find().pretty()

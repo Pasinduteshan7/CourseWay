@@ -1,0 +1,296 @@
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1rem;
+  background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+.auth-form {
+  background-color: #ffffff;
+  padding: 2.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.auth-form:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+}
+
+.auth-form h2 {
+  text-align: center;
+  font-size: 2rem;
+  color: #1f2937;
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.auth-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 0.6rem auto;
+  border-radius: 12px;
+}
+
+.auth-sub {
+  margin-top: 0.25rem;
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+/* ======================== */
+/* Input Fields             */
+/* ======================== */
+.auth-form input {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.input-label {
+  font-size: 0.9rem;
+  color: #374151;
+  margin: 0.25rem 0 0.35rem 0;
+}
+
+.password-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.password-row input {
+  flex: 1 1 auto;
+}
+
+.pwd-toggle {
+  background: transparent;
+  border: none;
+  color: #4f46e5;
+  font-weight: 600;
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.auth-message {
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  margin-bottom: 0.9rem;
+  font-size: 0.95rem;
+}
+
+.auth-message.error {
+  background: #ffefef;
+  color: #b91c1c;
+  border: 1px solid rgba(185, 28, 28, 0.08);
+}
+
+.auth-message.success {
+  background: #effaf6;
+  color: #065f46;
+  border: 1px solid rgba(6, 95, 70, 0.08);
+}
+
+/* ======================== */
+/* Buttons                  */
+/* ======================== */
+.auth-form button {
+  padding: 0.85rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+}
+
+.auth-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-form button[type="submit"] {
+  background-color: #4f46e5;
+  color: #fff;
+}
+
+.primary-btn {
+  padding: 0.85rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(90deg, #4f46e5, #4338ca);
+  color: #fff;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.auth-form button[type="submit"]:hover:not(:disabled) {
+  background-color: #4338ca;
+  transform: translateY(-2px);
+}
+
+/* ======================== */
+/* Footer Links             */
+/* ======================== */
+.auth-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+.auth-footer a {
+  color: #4f46e5;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.auth-footer a:hover {
+  color: #4338ca;
+}
+
+/* ======================== */
+/* Responsive adjustments   */
+/* ======================== */
+@media (max-width: 480px) {
+  .auth-form {
+    padding: 2rem 1.5rem;
+  }
+
+  .auth-form h2 {
+    font-size: 1.6rem;
+  }
+}
+/* ======================== */
+/* Dashboard specific styles */
+/* ======================== */
+.dashboard-page { background: linear-gradient(180deg,#f8fafc 0%, #fff 40%); min-height: 100vh; }
+.dashboard-hero { padding: 40px 20px; text-align: center; }
+.hero-inner { max-width: 1100px; margin: 0 auto; }
+.dashboard-hero h1 { font-size: 2rem; color: #0f172a; margin: 0; }
+.hero-sub { color: #475569; margin-top: 8px; }
+
+.dashboard-main { max-width: 1100px; margin: 24px auto; padding: 0 20px 60px; }
+.courses-grid-wrap .section-header { display:flex; align-items:baseline; gap:16px; margin-bottom:12px }
+.courses-grid-wrap h2 { margin:0; font-size:1.25rem }
+.courses-grid-wrap .muted { color:#64748b }
+
+.courses-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: 16px; }
+.course-link { text-decoration: none; color: inherit; }
+.course-card { background:#fff; border-radius:12px; overflow:hidden; box-shadow: 0 8px 24px rgba(2,6,23,0.06); display:flex; flex-direction:column; transition: transform .18s ease, box-shadow .18s ease; }
+.course-card:hover { transform: translateY(-6px); box-shadow: 0 18px 44px rgba(2,6,23,0.12); }
+.thumb { height:120px; display:flex; align-items:flex-end; padding:12px; color:#fff; position:relative }
+.thumb-badge { background: rgba(0,0,0,0.12); padding:6px 10px; border-radius:999px; font-size:0.8rem }
+.card-body { padding:12px 14px 16px; display:flex; flex-direction:column; gap:8px; }
+.course-title { margin:0; font-size:1.05rem; color:#0f172a }
+.course-desc { margin:0; color:#475569; font-size:0.92rem; min-height:44px }
+.card-meta { display:flex; align-items:center; gap:8px; margin-top:auto }
+.tag { background:#f1f5f9; color:#0f172a; padding:6px 8px; border-radius:999px; font-size:0.78rem; margin-right:6px }
+.rating { margin-left:auto; color:#0f172a; font-weight:600 }
+
+.error { color: #b91c1c }
+
+@media (max-width: 640px) {
+  .thumb { height: 100px }
+  .course-desc { min-height: 36px }
+}
+
+/* Instructor & enroll styles */
+.instructor { display:flex; align-items:center; gap:10px }
+.avatar { width:40px; height:40px; border-radius:999px; background:rgba(255,255,255,0.12); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700 }
+.inst-info { font-size:0.85rem; color:#334155 }
+.inst-name { font-weight:600 }
+.inst-sub { font-size:0.78rem; color:#64748b }
+.price-enroll { display:flex; align-items:center; gap:10px }
+.price { font-weight:700; color:#0f172a }
+.enroll-btn { background: linear-gradient(90deg,#06b6d4,#0891b2); color:#fff; border:none; padding:6px 10px; border-radius:8px; cursor:pointer }
+.enroll-btn:hover { transform: translateY(-2px) }
+
+.badge { display:inline-block; padding:6px 8px; border-radius:999px; font-size:0.75rem; font-weight:700; color:#fff; margin-left:8px }
+.badge.new { background: #ef4444 }
+.badge.popular { background: #f59e0b }
+.card-badges { position:absolute; right:10px; top:8px; display:flex; gap:6px }
+
+.course-link-inner { text-decoration:none; color:inherit }
+.bottom-meta { margin-top:12px; align-items:center }
+
+
+ 
+/* ======================== */
+/* Course page styles       */
+/* ======================== */
+.course-page { background: linear-gradient(180deg,#f8fafc 0%, #fff 30%); min-height: 100vh; padding: 28px 12px 60px; }
+.course-container { max-width: 1100px; margin: 0 auto; }
+.course-grid { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items:start; }
+.course-main { min-width: 0; }
+.course-card { background: #ffffff; padding: 18px; border-radius: 12px; box-shadow: 0 12px 28px rgba(2,6,23,0.06); }
+.course-title { font-size: 1.6rem; margin: 0 0 6px 0; color: #0f172a; }
+.course-desc { color: #0f172a; opacity: 0.9; margin: 0 0 12px 0; }
+.course-meta { display:flex; gap:12px; flex-wrap:wrap; color:#0f172a; margin-bottom:12px }
+.meta-item { font-size:0.95rem; color:#0f172a }
+
+.lessons h3, .reviews h3 { margin-top: 18px; margin-bottom: 10px; color:#0f172a }
+.lesson-list { list-style:none; padding:0; margin:0; display:grid; gap:10px }
+.lesson-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-radius:10px; background: linear-gradient(90deg,#eef2ff,#f8f9ff); color:#0f172a }
+.lesson-title { font-weight:600 }
+.lesson-type { font-size:0.9rem; color:#334155 }
+
+.reviews-list { display:grid; gap:12px }
+.review-card { background: linear-gradient(90deg,#fff7ed,#fffdf8); padding:12px; border-radius:10px; border:1px solid rgba(0,0,0,0.04); }
+.review-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start }
+.review-author { color:#0f172a; font-weight:700 }
+.review-rating { margin-left:8px; color:#b45309; font-weight:700 }
+.review-title { color:#0f172a; font-weight:600 }
+.review-actions { display:flex; gap:8px }
+.link-btn { background: transparent; border: none; color: #4f46e5; cursor: pointer; font-weight:600; padding:6px 8px; border-radius:8px }
+.review-body { color:#0f172a; margin-top:8px }
+.muted { color:#64748b }
+
+.review-form-wrap { margin-top:14px; padding:12px; border-radius:10px; background:#ffffff; border:1px solid rgba(15,23,42,0.04) }
+.review-form input, .review-form select, .review-form textarea { width:100%; padding:10px; border:1px solid #e6edf3; border-radius:8px; margin-bottom:10px; font-size:0.95rem }
+
+.course-aside { width: 320px; }
+.aside-card { background:#fff; padding:16px; border-radius:12px; box-shadow: 0 8px 20px rgba(2,6,23,0.04); }
+.aside-actions { margin-top:12px }
+
+@media (max-width: 900px) {
+  .course-grid { grid-template-columns: 1fr; }
+  .course-aside { order: 2 }
+}
+
+

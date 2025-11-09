@@ -1,0 +1,85 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  height: 100vh;
+  background: linear-gradient(to right, #f0f4ff, #e0e7ff);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+/* New homepage layout */
+.site-header { background: #fff; border-bottom: 1px solid #eef2ff; }
+.header-inner { max-width:1100px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:14px 20px }
+.brand { font-weight:800; color:#0b5fff; font-size:1.25rem }
+.nav a { margin-left:16px; color:#334155; text-decoration:none }
+.nav .cta { background:#0b5fff; color:#fff; padding:8px 12px; border-radius:8px }
+
+.hero { background: linear-gradient(90deg,#eef2ff 0%, #ffffff 100%); padding:36px 0 }
+.hero-inner { max-width:1100px; margin:0 auto; display:flex; gap:24px; align-items:center; padding:0 20px }
+.hero-copy { flex:1 }
+.brand-strong { color:#0b5fff }
+.lead { color:#475569; margin-top:8px }
+.price { color:#0b5fff; font-weight:600; margin-top:8px }
+.hero-cta { margin-top:12px; display:flex; gap:12px; align-items:center }
+.hero-link { color:#0b5fff; text-decoration:none }
+.hero-visual { width:360px; display:flex; justify-content:center }
+
+.partners { padding:28px 0; background:#fff }
+.partners-inner { max-width:1100px; margin:0 auto; padding:0 20px }
+.logos { display:flex; gap:18px; flex-wrap:wrap; margin-top:12px }
+.logo { background:#f8fafc; padding:8px 12px; border-radius:8px; color:#334155; font-weight:700 }
+/* Ensure partner heading is dark for readability */
+.partners-inner h3 { color: #0f172a; }
+
+.features { background:#f8fafc; padding:30px 0 }
+.features-inner { max-width:1100px; margin:0 auto; display:flex; gap:18px; padding:0 20px }
+.feature { background:#fff; padding:18px; border-radius:12px; flex:1; box-shadow:0 8px 20px rgba(2,6,23,0.04) }
+.feat-icon { font-size:26px; margin-bottom:8px }
+/* Force feature headings and paragraphs to dark colors for contrast */
+.features-inner .feature h4 { color: #0f172a; }
+.features-inner .feature p { color: #475569; }
+
+@media (max-width: 860px) {
+  .hero-inner { flex-direction:column-reverse }
+  .hero-visual { width:100%; display:flex; justify-content:center }
+  .features-inner { flex-direction:column }
+}
+
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.primary {
+  background-color: #4f46e5;
+  color: white;
+}
+
+.secondary {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+  border: 2px solid #4f46e5;
+}
+
+.btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
