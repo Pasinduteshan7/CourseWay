@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+// Test GitHub Actions CI/CD Pipeline - testing automatic Docker Hub push
 const authRoutes = require('./routes/auth');
 const reviewsRoutes = require('./routes/reviews');
 const coursesRoutes = require('./routes/courses');
@@ -205,6 +206,7 @@ mongoose
         console.error('Error updating sample course text', err);
       }
     })();
+
     const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
