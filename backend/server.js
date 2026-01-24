@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-// Test GitHub Actions CI/CD Pipeline - testing automatic Docker Hub push
 const authRoutes = require('./routes/auth');
 const reviewsRoutes = require('./routes/reviews');
 const coursesRoutes = require('./routes/courses');
@@ -10,7 +9,7 @@ const Course = require('./models/Course');
 const Lesson = require('./models/Lesson');
 
 const app = express();
-
+//github ci cd pipeline test
 // Enable CORS
 app.use(cors({
   origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
