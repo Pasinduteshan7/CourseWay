@@ -6,6 +6,8 @@ pipeline {
         DOCKER_HUB_REGISTRY = 'pasinduteshan'
         IMAGE_TAG = "${BUILD_NUMBER}"
         GITHUB_REPO = 'https://github.com/Pasinduteshan7/CourseWay.git'
+        AWS_REGION = 'us-east-1'
+        TERRAFORM_VERSION = '1.5.0'
     }
     
     stages {
@@ -62,12 +64,48 @@ pipeline {
             }
         }
         
+        stage('Terraform Plan') {
+            steps {
+                echo "Planning Terraform deployment..."
+                sh '''
+                cd terraform
+                terraform init
+                terraform plan -out=tfplan \
+                    -var="docker_hub_username=${DOCKER_HUB_USERNAME}" \
+                    -var="docker_hub_password=${DOCKER_HUB_PASSWORD}"
+                '''
+            }
+        }
+        
+        stage('Terraform Apply') {
+            steps {
+                echo "Applying Terraform configuration to AWS..."
+                withCredentials([
+                    string(credentialsId: 'aws_access_key_id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws_secret_access_key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                    cd terraform
+                    terraform apply -auto-approve tfplan
+                    terraform output > ../terraform_outputs.txt
+                    '''
+                }
+            }
+        }
+        
         stage('Health Check') {
             steps {
                 echo "Checking application health..."
                 sh '''
                 curl -f http://localhost:5000/api/health || true
                 echo "✅ Application deployed successfully!"
+                
+                # Check if AWS deployment happened
+                if [ -f terraform_outputs.txt ]; then
+                    echo ""
+                    echo "=== AWS Deployment Info ==="
+                    cat terraform_outputs.txt
+                fi
                 '''
             }
         }
