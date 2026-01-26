@@ -8,7 +8,7 @@ export default function Home() {
         <div className="header-inner">
           <div className="brand">CourseWay</div>
           <nav className="nav">
-            <Link to="/">Explore</Link>
+            <Link to="/dashboard">Explore</Link>
             <Link to="/">About</Link>
             <Link to="/login">Log in</Link>
             <Link to="/signup" className="cta">Join for Free</Link>
@@ -23,8 +23,8 @@ export default function Home() {
             <p className="lead">Subscribe to build job-ready skills from world-class institutions.</p>
             <p className="price">$24/month, cancel anytime</p>
             <div className="hero-cta">
-              <button className="btn primary">Start 7-day Free Trial</button>
-              <a className="hero-link" href="#">or $160/year with 14-day money-back guarantee</a>
+              <Link to="/dashboard" className="btn primary" style={{ textDecoration: 'none', display: 'inline-block' }}>Explore Courses</Link>
+              <a className="hero-link" href="#">or start your free trial</a>
             </div>
           </div>
 

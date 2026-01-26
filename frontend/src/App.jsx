@@ -5,8 +5,6 @@ import Dashboard from './Dashboard'
 import CoursePage from './Course'
 import { Routes, Route } from 'react-router-dom'
 
-// Export the route tree as a Routes element. The router with the future flag
-// will be created in `main.jsx` using this element.
 export default function App() {
   return (
     <Routes>

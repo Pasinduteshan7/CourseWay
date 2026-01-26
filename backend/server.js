@@ -5,6 +5,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const reviewsRoutes = require('./routes/reviews');
 const coursesRoutes = require('./routes/courses');
+const enrollmentRoutes = require('./routes/enrollment');
 const Course = require('./models/Course');
 const Lesson = require('./models/Lesson');
 
@@ -31,6 +32,7 @@ app.get('/api/auth/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api', reviewsRoutes);
 app.use('/api', coursesRoutes);
+app.use('/api', enrollmentRoutes);
 
 
 // Handle uncaught exceptions
@@ -74,8 +76,7 @@ mongoose
               category: 'Web Development',
               level: 'Intermediate',
               tags: ['web','react','node','mongodb'],
-              price: '$29.99',
-              instructor: 'Alex Morgan',
+              price: 29.99,
             },
             {
               title: 'Cloud Fundamentals for IT',
@@ -84,8 +85,7 @@ mongoose
               category: 'Cloud',
               level: 'Beginner',
               tags: ['cloud','aws','gcp','azure'],
-              price: '$24.99',
-              instructor: 'Priya Singh',
+              price: 24.99,
             },
             {
               title: 'Data Structures and Algorithms',
@@ -94,8 +94,7 @@ mongoose
               category: 'Computer Science',
               level: 'Intermediate',
               tags: ['algorithms','cs'],
-              price: '$19.99',
-              instructor: 'Dr. Chen Wu',
+              price: 19.99,
             },
             {
               title: 'DevOps Basics',
@@ -104,18 +103,16 @@ mongoose
               category: 'DevOps',
               level: 'Beginner',
               tags: ['devops','docker','ci'],
-              price: '$21.99',
-              instructor: 'Samira Ali',
+              price: 21.99,
             },
             {
-              title: 'Full-Stack Web Development',
-              slug: 'full-stack-web-development',
+              title: 'Full-Stack Web Development v2',
+              slug: 'full-stack-web-development-v2',
               description: 'Learn REST APIs, databases, and React — a practical guide for modern web development.',
               category: 'Web Development',
               level: 'Intermediate',
               tags: ['web','react','node','mongodb'],
-              price: '$29.99',
-              instructor: 'Alex Morgan',
+              price: 29.99,
             },
             // Additional IT-industry focused courses
             {
@@ -125,8 +122,7 @@ mongoose
               category: 'Security',
               level: 'Beginner',
               tags: ['security','cybersecurity','network'],
-              price: '$34.99',
-              instructor: 'Jordan Blake',
+              price: 34.99,
             },
             {
               title: 'Machine Learning Engineering',
@@ -135,8 +131,7 @@ mongoose
               category: 'AI/ML',
               level: 'Advanced',
               tags: ['ml','mlops','deployment'],
-              price: '$49.99',
-              instructor: 'Dr. Anya Patel',
+              price: 49.99,
             },
             {
               title: 'Data Engineering with Spark',
@@ -145,8 +140,7 @@ mongoose
               category: 'Data Engineering',
               level: 'Intermediate',
               tags: ['data','spark','etl'],
-              price: '$39.99',
-              instructor: 'Miguel Torres',
+              price: 39.99,
             },
             {
               title: 'Kubernetes for Developers',
@@ -155,8 +149,7 @@ mongoose
               category: 'Cloud',
               level: 'Intermediate',
               tags: ['kubernetes','containers','cloud'],
-              price: '$29.99',
-              instructor: 'Aisha Khan',
+              price: 29.99,
             },
             {
               title: 'Site Reliability Engineering (SRE) Basics',
@@ -165,8 +158,7 @@ mongoose
               category: 'DevOps',
               level: 'Intermediate',
               tags: ['sre','monitoring','reliability'],
-              price: '$34.99',
-              instructor: 'Evan Lee',
+              price: 34.99,
             },
           ];
 

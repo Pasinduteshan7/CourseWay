@@ -14,6 +14,7 @@ const courseSchema = new mongoose.Schema(
     published: { type: Boolean, default: true },
     averageRating: { type: Number, default: 0 },
     reviewsCount: { type: Number, default: 0 },
+    lessons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' }],
   },
   { timestamps: true }
 );

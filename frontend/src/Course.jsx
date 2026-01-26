@@ -1,22 +1,38 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 export default function CoursePage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   // review form state
   const [name, setName] = useState('');
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsAuthenticated(!!token);
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUserId(payload.id);
+      } catch (e) {
+        console.error('Failed to parse token', e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -48,18 +64,29 @@ export default function CoursePage() {
 
   async function submitReview(e) {
     e.preventDefault();
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      alert('You must be logged in to submit a review');
+      navigate('/login');
+      return;
+    }
+    
     if (!course) return;
     try {
       const res = await fetch(`${API_URL}/api/courses/${course._id}/reviews`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ name, rating, title, body }),
       });
       const data = await res.json();
       if (res.ok) {
-        // prepend
         setReviews((s) => [data, ...s]);
         setName(''); setRating(5); setTitle(''); setBody('');
+        alert('Review submitted!');
       } else {
         alert(data.message || 'Failed to submit review');
       }
@@ -69,34 +96,92 @@ export default function CoursePage() {
     }
   }
 
-  async function deleteReview(id) {
-    if (!confirm('Delete this review?')) return;
-    try {
-      const res = await fetch(`${API_URL}/api/reviews/${id}`, { method: 'DELETE' });
-      if (res.ok) setReviews((s) => s.filter((r) => r._id !== id));
-      else alert('Failed to delete');
-    } catch (err) { console.error(err); alert('Server error'); }
-  }
-
   async function editReview(id) {
-    const newBody = prompt('Edit review body');
-    if (newBody == null) return;
+    const newTitle = prompt('Edit title:');
+    if (!newTitle) return;
+    const newBody = prompt('Edit review:');
+    if (!newBody) return;
+
+    const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API_URL}/api/reviews/${id}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: newBody }),
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title: newTitle, body: newBody }),
       });
       if (res.ok) {
         const updated = await res.json();
-        setReviews((s) => s.map((r) => (r._id === id ? updated : r)));
-      } else alert('Failed to update');
-    } catch (err) { console.error(err); alert('Server error'); }
+        setReviews(reviews.map(r => r._id === id ? updated : r));
+        alert('Review updated!');
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to update review');
+      }
+    } catch (err) {
+      alert('Error updating review');
+    }
+  }
+
+  async function deleteReview(id) {
+    if (!confirm('Delete this review?')) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_URL}/api/reviews/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setReviews(reviews.filter(r => r._id !== id));
+        alert('Review deleted!');
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to delete review');
+      }
+    } catch (err) {
+      alert('Error deleting review');
+    }
   }
 
   if (loading) return <div className="auth-container"><div className="auth-form">Loading…</div></div>;
-  if (error) return <div className="auth-container"><div className="auth-form">{error}</div></div>;
+  if (error) return (
+    <div className="auth-container">
+      <div className="auth-form">
+        <h2>{error}</h2>
+        <p>Please log in to view course content.</p>
+        <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+          <Link to="/login"><button className="primary-btn">Log In</button></Link>
+          <Link to="/signup"><button className="primary-btn">Sign Up</button></Link>
+        </div>
+      </div>
+    </div>
+  );
+  if (!isAuthenticated) return <div className="auth-container"><div className="auth-form">Redirecting to login...</div></div>;
 
   return (
     <div className="course-page">
+      <div style={{ padding: '10px 20px', background: '#f5f5f5', borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Link to="/dashboard" style={{ textDecoration: 'none', color: '#2196F3', fontWeight: 'bold' }}>← Back to Courses</Link>
+        {isAuthenticated ? (
+          <button 
+            onClick={() => {
+              localStorage.removeItem('token');
+              setIsAuthenticated(false);
+              navigate('/login');
+            }}
+            style={{ padding: '8px 16px', background: '#ff4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Logout
+          </button>
+        ) : (
+          <Link to="/login" style={{ padding: '8px 16px', background: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', textDecoration: 'none' }}>
+            Login
+          </Link>
+        )}
+      </div>
       <div className="course-container">
         <div className="course-grid">
           <main className="course-main">
@@ -132,10 +217,12 @@ export default function CoursePage() {
                           <span className="review-rating">{r.rating} ★</span>
                           <div className="review-title">{r.title}</div>
                         </div>
-                        <div className="review-actions">
-                          <button onClick={() => editReview(r._id)} className="link-btn">Edit</button>
-                          <button onClick={() => deleteReview(r._id)} className="link-btn">Delete</button>
-                        </div>
+                        {isAuthenticated && currentUserId === r.userId && (
+                          <div className="review-actions">
+                            <button onClick={() => editReview(r._id)} className="link-btn">Edit</button>
+                            <button onClick={() => deleteReview(r._id)} className="link-btn">Delete</button>
+                          </div>
+                        )}
                       </div>
                       <p className="review-body">{r.body}</p>
                     </div>
