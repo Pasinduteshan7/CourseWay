@@ -1,31 +1,47 @@
 services:
   mongo:
-    image: mongo
+    image: mongo:latest
+    container_name: mongo_db
     ports:
       - "27017:27017"
-    command: mongod --quiet
+    volumes:
+      - mongo_data:/data/db
     networks:
       - mern-network
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    command: mongod --quiet
+
+  backend:
+    image: pasinduteshan/courseway-backend:latest
+    container_name: courseway_backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+    networks:
+      - mern-network
+    environment:
+      MONGO_URI: mongodb://root:password@mongo:27017/courseway?authSource=admin
+      JWT_SECRET: your_jwt_secret_key
+    restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    image: pasinduteshan/courseway-frontend:latest
+    container_name: courseway_frontend
     ports:
       - "5173:5173"
     depends_on:
       - backend
+    networks:
+      - mern-network
     environment:
       - VITE_API_URL=http://127.0.0.1:5000
-    networks:
-      - mern-network
+    restart: unless-stopped
 
-  backend:
-    build: ./backend
-    ports:
-      - "5000:5000"
-    env_file:
-      - ./backend/.env
-    networks:
-      - mern-network
+volumes:
+  mongo_data:
 
 networks:
   mern-network:
