@@ -20,10 +20,47 @@ pipeline {
         
         stage('Build Docker Images') {
             steps {
-                echo "Building Docker images..."
+                echo "Building Docker images with retry logic..."
                 sh '''
-                docker build -t ${DOCKER_HUB_REGISTRY}/courseway-frontend:${IMAGE_TAG} frontend/
-                docker build -t ${DOCKER_HUB_REGISTRY}/courseway-backend:${IMAGE_TAG} backend/
+                # Configure Docker daemon with mirror and network settings
+                mkdir -p ~/.docker
+                cat > ~/.docker/config.json << 'EOF'
+{
+  "registry-mirrors": [
+    "https://mirror.aliyun.com",
+    "https://docker.io"
+  ]
+}
+EOF
+                
+                # Retry function for Docker builds
+                retry_docker_build() {
+                    local dockerfile=$1
+                    local tag=$2
+                    local max_attempts=3
+                    local attempt=1
+                    
+                    while [ $attempt -le $max_attempts ]; do
+                        echo "Build attempt $attempt of $max_attempts for $tag..."
+                        if docker build --network host -t $tag $dockerfile; then
+                            echo "Successfully built $tag"
+                            return 0
+                        fi
+                        attempt=$((attempt + 1))
+                        if [ $attempt -le $max_attempts ]; then
+                            echo "Build failed, waiting 10 seconds before retry..."
+                            sleep 10
+                        fi
+                    done
+                    echo "Failed to build $tag after $max_attempts attempts"
+                    return 1
+                }
+                
+                # Build images with retry
+                retry_docker_build "frontend/" "${DOCKER_HUB_REGISTRY}/courseway-frontend:${IMAGE_TAG}"
+                retry_docker_build "backend/" "${DOCKER_HUB_REGISTRY}/courseway-backend:${IMAGE_TAG}"
+                
+                # Tag as latest
                 docker tag ${DOCKER_HUB_REGISTRY}/courseway-frontend:${IMAGE_TAG} ${DOCKER_HUB_REGISTRY}/courseway-frontend:latest
                 docker tag ${DOCKER_HUB_REGISTRY}/courseway-backend:${IMAGE_TAG} ${DOCKER_HUB_REGISTRY}/courseway-backend:latest
                 '''

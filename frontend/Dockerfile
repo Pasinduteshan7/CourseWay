@@ -1,11 +1,8 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
-# Use npm install (safer if package-lock.json isn't present)
-RUN npm install
-
-FROM node:20-alpine AS dev
-WORKDIR /app
+# Use npm install with network timeout settings
+RUN npm install --network-timeout=60000 --fetch-timeout=60000 || npm install --network-timeout=60000 --fetch-timeout=60000
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 EXPOSE 5173
