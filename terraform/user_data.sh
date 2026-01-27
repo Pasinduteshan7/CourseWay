@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-# Wait for instance to be fully ready
+echo "=== Starting CourseWay Deployment ==="
 sleep 10
 
-# Get the instance's public IP
+# Get instance IP
 INSTANCE_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-echo "Instance IP: $INSTANCE_IP" | tee /var/log/courseway-deploy.log
+echo "Instance IP: $INSTANCE_IP"
 
 # Update system
 apt-get update
@@ -15,10 +15,8 @@ apt-get upgrade -y
 # Install Docker
 apt-get install -y docker.io docker-compose
 
-# Add ubuntu user to docker group
+# Start Docker
 usermod -aG docker ubuntu
-
-# Start Docker service
 systemctl start docker
 systemctl enable docker
 
@@ -26,12 +24,8 @@ systemctl enable docker
 mkdir -p /opt/courseway
 cd /opt/courseway
 
-# Login to Docker Hub and pull images
-echo "${docker_hub_password}" | docker login -u "${docker_hub_username}" --password-stdin
-
 # Create docker-compose.yml
-# Use backend service name as hostname instead of IP
-cat > docker-compose.yml << 'COMPOSE_EOF'
+cat > docker-compose.yml <<'EOFCOMPOSE'
 version: '3.8'
 
 services:
@@ -73,7 +67,7 @@ services:
     networks:
       - mern-network
     environment:
-      VITE_API_URL: http://courseway_backend:5000
+      VITE_API_URL: http://INSTANCE_IP_PLACEHOLDER:5000
     restart: unless-stopped
 
 volumes:
@@ -82,55 +76,27 @@ volumes:
 networks:
   mern-network:
     driver: bridge
-COMPOSE_EOF
+EOFCOMPOSE
 
-# Log the docker-compose content
-echo "=== Docker Compose Configuration ===" >> /var/log/courseway-deploy.log
-cat docker-compose.yml >> /var/log/courseway-deploy.log
+# Replace placeholder with actual IP
+sed -i "s/INSTANCE_IP_PLACEHOLDER/$INSTANCE_IP/g" docker-compose.yml
 
-# Wait for Docker daemon to be fully ready
+# Wait for Docker daemon
 sleep 10
 
-# Start containers with retry logic
-MAX_RETRIES=3
-RETRY=1
-until [ $RETRY -gt $MAX_RETRIES ]; do
-  echo "Starting containers (attempt $RETRY/$MAX_RETRIES)..." | tee -a /var/log/courseway-deploy.log
-  if docker-compose pull && docker-compose up -d; then
-    echo "✅ Containers started successfully" | tee -a /var/log/courseway-deploy.log
-    break
-  else
-    echo "❌ Attempt $RETRY failed, retrying in 10 seconds..." | tee -a /var/log/courseway-deploy.log
-    sleep 10
-    RETRY=$((RETRY + 1))
-  fi
-done
-
-# Wait a bit more for containers to stabilize
-sleep 5
-
-# Log container status
-echo "=== Container Status ===" >> /var/log/courseway-deploy.log
-docker ps -a >> /var/log/courseway-deploy.log 2>&1
-
-echo "=== Docker Compose Logs ===" >> /var/log/courseway-deploy.log
-docker-compose logs >> /var/log/courseway-deploy.log 2>&1
-
-# Create a script to update the application
-cat > /opt/courseway/update.sh <<'UPDATESCRIPT'
-#!/bin/bash
-cd /opt/courseway
+# Pull and start containers
+echo "=== Pulling Docker images ==="
 docker-compose pull
+
+echo "=== Starting containers ==="
 docker-compose up -d
-UPDATESCRIPT
 
-chmod +x /opt/courseway/update.sh
+echo "=== Waiting for services to be ready ==="
+sleep 15
 
-# Logout from Docker Hub
-docker logout
+# Check status
+docker ps
 
-# Log instance URLs
-echo "=== Deployment Complete ===" | tee -a /var/log/courseway-deploy.log
-echo "Instance is running at: http://${INSTANCE_IP}:5173" | tee -a /var/log/courseway-deploy.log
-echo "Backend API at: http://${INSTANCE_IP}:5000" | tee -a /var/log/courseway-deploy.log
-echo "Deployment finished at $(date)" | tee -a /var/log/courseway-deploy.log
+echo "=== Deployment Complete ==="
+echo "Frontend: http://$INSTANCE_IP:5173"
+echo "Backend: http://$INSTANCE_IP:5000"
