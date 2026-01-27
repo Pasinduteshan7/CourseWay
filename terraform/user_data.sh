@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Wait for instance to be fully ready
+sleep 10
+
+# Get the instance's public IP
+INSTANCE_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+
 # Update system
 apt-get update
 apt-get upgrade -y
@@ -22,8 +28,8 @@ cd /opt/courseway
 # Login to Docker Hub and pull images
 echo "${docker_hub_password}" | docker login -u "${docker_hub_username}" --password-stdin
 
-# Create docker-compose.yml
-cat > docker-compose.yml <<'EOF'
+# Create docker-compose.yml with dynamic API URL
+cat > docker-compose.yml <<EOF
 version: '3.8'
 
 services:
@@ -65,7 +71,7 @@ services:
     networks:
       - mern-network
     environment:
-      - VITE_API_URL=http://localhost:5000
+      - VITE_API_URL=http://$INSTANCE_IP:5000
     restart: unless-stopped
 
 volumes:
@@ -76,9 +82,22 @@ networks:
     driver: bridge
 EOF
 
-# Start containers
-docker-compose pull
-docker-compose up -d
+# Wait for Docker daemon to be fully ready
+sleep 10
+
+# Start containers with retry logic
+MAX_RETRIES=3
+RETRY=1
+until [ $RETRY -gt $MAX_RETRIES ]; do
+  if docker-compose pull && docker-compose up -d; then
+    echo "Containers started successfully"
+    break
+  else
+    echo "Attempt $RETRY failed, retrying in 10 seconds..."
+    sleep 10
+    RETRY=$((RETRY + 1))
+  fi
+done
 
 # Create a script to update the application
 cat > /opt/courseway/update.sh <<'UPDATESCRIPT'
@@ -92,3 +111,7 @@ chmod +x /opt/courseway/update.sh
 
 # Logout from Docker Hub
 docker logout
+
+# Log instance IP for debugging
+echo "Instance is running at: http://$INSTANCE_IP:5173"
+echo "Backend API at: http://$INSTANCE_IP:5000"
