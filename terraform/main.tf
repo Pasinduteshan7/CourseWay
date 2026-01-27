@@ -146,7 +146,7 @@ resource "aws_instance" "courseway_instance" {
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.courseway_subnet.id
   vpc_security_group_ids = [aws_security_group.courseway_sg.id]
-  key_name               = aws_key_pair.courseway.key_name
+  key_name               = data.aws_key_pair.courseway.key_name
 
   # User data script to install Docker and pull images
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
@@ -195,14 +195,9 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# Create SSH key pair resource
-resource "aws_key_pair" "courseway" {
-  key_name   = "courseway-key"
-  public_key = file("${path.module}/../.ssh/courseway-key.pub")
-
-  tags = {
-    Name = "courseway-key-pair"
-  }
+# Reference existing SSH key pair resource
+data "aws_key_pair" "courseway" {
+  key_name = "courseway-key"
 }
 
 # Data source for availability zones
