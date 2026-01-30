@@ -13,7 +13,7 @@ const app = express();
 //github ci cd pipeline test
 // Enable CORS
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173','http://52.86.2.215:5173'],
   credentials: true,
 }));
 
