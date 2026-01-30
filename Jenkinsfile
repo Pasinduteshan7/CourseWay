@@ -173,6 +173,10 @@ COMPOSE_EOF
 echo "🛑 Stopping existing containers..."
 docker-compose down || true
 
+# Force remove any existing containers with our names
+echo "🗑️ Removing any existing containers with our names..."
+docker rm -f mongo_db courseway_backend courseway_frontend 2>/dev/null || true
+
 # Clean up old containers and images
 echo "🧹 Cleaning up old resources..."
 docker container prune -f
