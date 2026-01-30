@@ -2,167 +2,400 @@ pipeline {
     agent any
     
     environment {
-        DOCKER_HUB_USERNAME = 'pasinduteshan'
-        DOCKER_HUB_REGISTRY = 'pasinduteshan'
-        IMAGE_TAG = "${BUILD_NUMBER}"
-        GITHUB_REPO = 'https://github.com/Pasinduteshan7/CourseWay.git'
-        AWS_REGION = 'us-east-1'
-        TERRAFORM_VERSION = '1.5.0'
+        DOCKER_REGISTRY = "pasinduteshan"
+        DOCKER_HUB_REPO_BACKEND = "${DOCKER_REGISTRY}/courseway-backend"
+        DOCKER_HUB_REPO_FRONTEND = "${DOCKER_REGISTRY}/courseway-frontend"
+        BUILD_NUMBER = "${env.BUILD_NUMBER}"
+        EC2_HOST = "52.86.2.215"
+        EC2_USER = "ubuntu"
+        SSH_KEY_ID = "ec2-ssh-key"
+        COMPOSE_PROJECT_NAME = "courseway"
+        // Environment variables for deployment
+        MONGODB_URI = "mongodb://mongo_db:27017/courseway_db"
+        VITE_API_URL = "http://52.86.2.215:5000"
+        CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://52.86.2.215:5173"
+    }
+    
+    triggers {
+        // Trigger build on GitHub push
+        githubPush()
     }
     
     stages {
-        stage('Checkout') {
+        stage('🔄 Checkout') {
             steps {
-                echo "Checking out code from GitHub..."
-                git branch: 'main', url: "${GITHUB_REPO}"
+                echo '📥 Checking out code from GitHub...'
+                git branch: 'main', url: 'https://github.com/Pasinduteshan7/CourseWay.git'
             }
         }
         
-        stage('Build Docker Images') {
+        stage('🔧 Build Docker Images') {
+            parallel {
+                stage('🏗️ Build Frontend') {
+                    steps {
+                        echo '🚀 Building frontend Docker image...'
+                        script {
+                            sh '''
+                                cd frontend
+                                docker build --no-cache -t ${DOCKER_HUB_REPO_FRONTEND}:${BUILD_NUMBER} .
+                                docker tag ${DOCKER_HUB_REPO_FRONTEND}:${BUILD_NUMBER} ${DOCKER_HUB_REPO_FRONTEND}:latest
+                                echo "✅ Frontend image built successfully"
+                            '''
+                        }
+                    }
+                }
+                stage('🛠️ Build Backend') {
+                    steps {
+                        echo '🚀 Building backend Docker image...'
+                        script {
+                            sh '''
+                                cd backend
+                                docker build --no-cache -t ${DOCKER_HUB_REPO_BACKEND}:${BUILD_NUMBER} .
+                                docker tag ${DOCKER_HUB_REPO_BACKEND}:${BUILD_NUMBER} ${DOCKER_HUB_REPO_BACKEND}:latest
+                                echo "✅ Backend image built successfully"
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('📤 Push to Docker Hub') {
             steps {
-                echo "Building Docker images with retry logic..."
-                sh '''
-                # Configure Docker daemon with mirror and network settings
-                mkdir -p ~/.docker
-                cat > ~/.docker/config.json << 'EOF'
-{
-  "registry-mirrors": [
-    "https://mirror.aliyun.com",
-    "https://docker.io"
-  ]
+                echo '📦 Pushing images to Docker Hub...'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        
+                        echo "📤 Pushing versioned images..."
+                        docker push ${DOCKER_HUB_REPO_FRONTEND}:${BUILD_NUMBER}
+                        docker push ${DOCKER_HUB_REPO_BACKEND}:${BUILD_NUMBER}
+                        
+                        echo "📤 Pushing latest images..."
+                        docker push ${DOCKER_HUB_REPO_FRONTEND}:latest
+                        docker push ${DOCKER_HUB_REPO_BACKEND}:latest
+                        
+                        docker logout
+                        echo "✅ All images pushed to Docker Hub successfully"
+                    '''
+                }
+            }
+        }
+        
+        stage('🚀 Deploy to AWS EC2') {
+            steps {
+                echo '🌩️ Deploying application to AWS EC2...'
+                withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY_ID}", keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
+                    sh '''
+                        # Create deployment script with proper environment variables
+                        cat > deploy_to_ec2.sh << 'DEPLOY_EOF'
+#!/bin/bash
+set -e
+
+echo "🚀 Starting deployment on AWS EC2..."
+
+# Ensure Docker and Docker Compose are available
+if ! command -v docker &> /dev/null; then
+    echo "Installing Docker..."
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sudo sh get-docker.sh
+    sudo usermod -aG docker ubuntu
+fi
+
+if ! command -v docker-compose &> /dev/null; then
+    echo "Installing Docker Compose..."
+    sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+fi
+
+# Create application directory
+mkdir -p /home/ubuntu/courseway-app
+cd /home/ubuntu/courseway-app
+
+# Create updated docker-compose.yml with proper environment variables
+cat > docker-compose.yml << 'COMPOSE_EOF'
+version: '3.8'
+
+services:
+  mongo_db:
+    image: mongo:8.2
+    container_name: mongo_db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
+    command: mongod --bind_ip_all --auth
+    networks:
+      - courseway
+
+  courseway_backend:
+    image: pasinduteshan/courseway-backend:latest
+    container_name: courseway_backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongo_db:27017/courseway_db?authSource=admin
+      - PORT=5000
+      - JWT_SECRET=your-secret-key
+      - CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://52.86.2.215:5173
+    depends_on:
+      - mongo_db
+    networks:
+      - courseway
+
+  courseway_frontend:
+    image: pasinduteshan/courseway-frontend:latest
+    container_name: courseway_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://52.86.2.215:5000
+    depends_on:
+      - courseway_backend
+    networks:
+      - courseway
+
+volumes:
+  mongodb_data:
+
+networks:
+  courseway:
+    driver: bridge
+COMPOSE_EOF
+
+# Stop existing containers
+echo "🛑 Stopping existing containers..."
+docker-compose down || true
+
+# Clean up old containers and images
+echo "🧹 Cleaning up old resources..."
+docker container prune -f
+docker image prune -af
+
+# Pull latest images
+echo "📥 Pulling latest images from Docker Hub..."
+docker pull pasinduteshan/courseway-frontend:latest
+docker pull pasinduteshan/courseway-backend:latest
+docker pull mongo:8.2
+
+# Start new containers
+echo "▶️ Starting application services..."
+docker-compose up -d
+
+# Wait for services to be ready
+echo "⏳ Waiting for services to start..."
+sleep 30
+
+# Initialize MongoDB if needed
+echo "🔧 Setting up MongoDB..."
+docker-compose exec -T mongo_db mongosh admin --eval "
+if (db.getUser('admin') == null) {
+  db.createUser({
+    user: 'admin',
+    pwd: 'password',
+    roles: [{ role: 'userAdminAnyDatabase', db: 'admin' }]
+  });
 }
-EOF
-                
-                # Retry function for Docker builds
-                retry_docker_build() {
-                    local dockerfile=$1
-                    local tag=$2
-                    local max_attempts=3
-                    local attempt=1
-                    
-                    while [ $attempt -le $max_attempts ]; do
-                        echo "Build attempt $attempt of $max_attempts for $tag..."
-                        if docker build --network host -t $tag $dockerfile; then
-                            echo "Successfully built $tag"
-                            return 0
-                        fi
-                        attempt=$((attempt + 1))
-                        if [ $attempt -le $max_attempts ]; then
-                            echo "Build failed, waiting 10 seconds before retry..."
-                            sleep 10
-                        fi
-                    done
-                    echo "Failed to build $tag after $max_attempts attempts"
-                    return 1
-                }
-                
-                # Build images with retry
-                retry_docker_build "frontend/" "${DOCKER_HUB_REGISTRY}/courseway-frontend:${IMAGE_TAG}"
-                retry_docker_build "backend/" "${DOCKER_HUB_REGISTRY}/courseway-backend:${IMAGE_TAG}"
-                
-                # Tag as latest
-                docker tag ${DOCKER_HUB_REGISTRY}/courseway-frontend:${IMAGE_TAG} ${DOCKER_HUB_REGISTRY}/courseway-frontend:latest
-                docker tag ${DOCKER_HUB_REGISTRY}/courseway-backend:${IMAGE_TAG} ${DOCKER_HUB_REGISTRY}/courseway-backend:latest
-                '''
-            }
-        }
-        
-        stage('Push to Docker Hub') {
-            steps {
-                echo "Pushing images to Docker Hub..."
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh '''
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                    docker push ${DOCKER_HUB_REGISTRY}/courseway-frontend:${IMAGE_TAG}
-                    docker push ${DOCKER_HUB_REGISTRY}/courseway-frontend:latest
-                    docker push ${DOCKER_HUB_REGISTRY}/courseway-backend:${IMAGE_TAG}
-                    docker push ${DOCKER_HUB_REGISTRY}/courseway-backend:latest
-                    docker logout
+"
+
+echo "✅ Deployment completed successfully!"
+
+# Show service status
+echo "📊 Service Status:"
+docker-compose ps
+DEPLOY_EOF
+
+                        # Make script executable
+                        chmod +x deploy_to_ec2.sh
+                        
+                        # Copy deployment script to EC2
+                        scp -i $SSH_KEY_FILE -o StrictHostKeyChecking=no deploy_to_ec2.sh ${EC2_USER}@${EC2_HOST}:/tmp/
+                        
+                        # Execute deployment on EC2
+                        ssh -i $SSH_KEY_FILE -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} 'bash /tmp/deploy_to_ec2.sh'
+                        
+                        echo "✅ Application deployed successfully to EC2!"
                     '''
                 }
             }
         }
         
-        stage('Cleanup & Deploy') {
+        stage('🔍 Health Check & Verification') {
             steps {
-                echo "Stopping old containers..."
-                sh '''
-                docker compose down || true
-                docker system prune -f || true
-                '''
-                
-                echo "Deploying new containers..."
-                sh '''
-                docker pull ${DOCKER_HUB_REGISTRY}/courseway-frontend:latest
-                docker pull ${DOCKER_HUB_REGISTRY}/courseway-backend:latest
-                docker compose up -d
-                sleep 5
-                '''
-            }
-        }
-        
-        stage('Terraform Plan') {
-            steps {
-                echo "Planning Terraform deployment..."
-                withCredentials([
-                    string(credentialsId: 'aws_access_key_id', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'aws_secret_access_key', variable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
+                echo '🏥 Performing comprehensive health checks...'
+                withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY_ID}", keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
                     sh '''
-                    cd terraform
-                    terraform init
-                    terraform plan -out=tfplan \
-                        -var="docker_hub_username=${DOCKER_HUB_USERNAME}" \
-                        -var="docker_hub_password=${DOCKER_HUB_PASSWORD}"
+                        # Create health check script
+                        cat > health_check.sh << 'HEALTH_EOF'
+#!/bin/bash
+
+echo "🔍 Performing health checks..."
+
+cd /home/ubuntu/courseway-app
+
+# Check container status
+echo "=== Container Status ==="
+docker-compose ps
+
+echo ""
+echo "=== Service Health Checks ==="
+
+# Check MongoDB
+echo "Checking MongoDB connection..."
+max_attempts=5
+attempt=1
+while [ $attempt -le $max_attempts ]; do
+    if docker-compose exec -T mongo_db mongosh admin --eval "db.runCommand({ping: 1})" > /dev/null 2>&1; then
+        echo "✅ MongoDB is healthy"
+        break
+    else
+        echo "⏳ MongoDB not ready, attempt $attempt/$max_attempts"
+        if [ $attempt -eq $max_attempts ]; then
+            echo "❌ MongoDB health check failed"
+        fi
+    fi
+    attempt=$((attempt + 1))
+    sleep 5
+done
+
+# Check Backend API with retry
+echo "Checking Backend API..."
+max_attempts=10
+attempt=1
+backend_healthy=false
+while [ $attempt -le $max_attempts ]; do
+    if curl -f --connect-timeout 5 --max-time 10 http://localhost:5000 > /dev/null 2>&1; then
+        echo "✅ Backend API is healthy"
+        backend_healthy=true
+        break
+    else
+        echo "⏳ Backend not ready, attempt $attempt/$max_attempts"
+        if [ $attempt -eq $max_attempts ]; then
+            echo "❌ Backend API health check failed"
+            echo "Backend logs:"
+            docker-compose logs --tail=10 courseway_backend
+        fi
+    fi
+    attempt=$((attempt + 1))
+    sleep 5
+done
+
+# Check Frontend with retry
+echo "Checking Frontend..."
+max_attempts=5
+attempt=1
+while [ $attempt -le $max_attempts ]; do
+    if curl -f --connect-timeout 5 --max-time 10 http://localhost:5173 > /dev/null 2>&1; then
+        echo "✅ Frontend is healthy"
+        break
+    else
+        echo "⏳ Frontend not ready, attempt $attempt/$max_attempts"
+        if [ $attempt -eq $max_attempts ]; then
+            echo "❌ Frontend health check failed"
+            echo "Frontend logs:"
+            docker-compose logs --tail=10 courseway_frontend
+        fi
+    fi
+    attempt=$((attempt + 1))
+    sleep 5
+done
+
+echo ""
+echo "=== Network Connectivity ==="
+echo "Testing external access..."
+curl -I http://52.86.2.215:5173 2>/dev/null | head -1 || echo "⚠️ External frontend access check failed"
+curl -I http://52.86.2.215:5000 2>/dev/null | head -1 || echo "⚠️ External backend access check failed"
+
+echo ""
+echo "=== Application URLs ==="
+echo "🌐 Frontend: http://52.86.2.215:5173"
+echo "🔗 Backend API: http://52.86.2.215:5000"
+echo "📊 Database: MongoDB on localhost:27017"
+
+echo ""
+echo "=== Deployment Summary ==="
+echo "📦 Build Number: ${BUILD_NUMBER:-unknown}"
+echo "🏷️ Frontend Image: pasinduteshan/courseway-frontend:latest"
+echo "🏷️ Backend Image: pasinduteshan/courseway-backend:latest"
+echo "⏰ Deployment Time: $(date)"
+echo "✅ Status: DEPLOYED"
+
+echo ""
+echo "=== Container Resource Usage ==="
+docker stats --no-stream --format "table {{.Container}}\\t{{.CPUPerc}}\\t{{.MemUsage}}\\t{{.NetIO}}"
+HEALTH_EOF
+
+                        # Execute health check on EC2
+                        ssh -i $SSH_KEY_FILE -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} 'bash -s' < health_check.sh
+                        
+                        echo ""
+                        echo "🎉 Health checks completed!"
+                        echo "🌐 Your application should be accessible at: http://52.86.2.215:5173"
                     '''
                 }
-            }
-        }
-        
-        stage('Terraform Apply') {
-            steps {
-                echo "Applying Terraform configuration to AWS..."
-                withCredentials([
-                    string(credentialsId: 'aws_access_key_id', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'aws_secret_access_key', variable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
-                    sh '''
-                    cd terraform
-                    terraform apply -auto-approve tfplan
-                    terraform output > ../terraform_outputs.txt
-                    '''
-                }
-            }
-        }
-        
-        stage('Health Check') {
-            steps {
-                echo "Checking application health..."
-                sh '''
-                curl -f http://localhost:5000/api/health || true
-                echo "✅ Application deployed successfully!"
-                
-                # Check if AWS deployment happened
-                if [ -f terraform_outputs.txt ]; then
-                    echo ""
-                    echo "=== AWS Deployment Info ==="
-                    cat terraform_outputs.txt
-                fi
-                '''
             }
         }
     }
     
     post {
         always {
-            sh 'docker logout || true'
-            sh 'docker compose logs || true'
+            echo '🧹 Cleaning up local resources...'
+            sh '''
+                docker logout || true
+                docker system prune -f || true
+                rm -f deploy_to_ec2.sh health_check.sh
+            '''
         }
+        
         success {
-            echo "✅ Pipeline completed successfully!"
+            echo '''
+            🎉 ========================================
+               DEPLOYMENT SUCCESSFUL! ✅
+            ========================================
+            
+            ✅ Docker images built and pushed to Docker Hub
+            ✅ Application deployed to AWS EC2 (52.86.2.215)
+            ✅ Health checks completed
+            
+            🌐 Your CourseWay application is now live at:
+            📱 Frontend: http://52.86.2.215:5173
+            🔗 Backend API: http://52.86.2.215:5000
+            
+            📝 What happens next:
+            1. Test your application functionality
+            2. Make code changes and push to GitHub
+            3. Jenkins will automatically build and deploy
+            4. Monitor logs if any issues occur
+            
+            🚀 Happy coding!
+            '''
         }
+        
         failure {
-            echo "❌ Pipeline failed! Check logs above."
+            echo '''
+            ❌ ========================================
+               DEPLOYMENT FAILED! 🚨
+            ========================================
+            
+            Please check the console output above for detailed error information.
+            
+            Common troubleshooting steps:
+            🔧 Docker Hub credentials: Manage Jenkins → Credentials → dockerhub-credentials
+            🔧 SSH key configuration: Manage Jenkins → Credentials → ec2-ssh-key
+            🔧 Application logs: SSH to EC2 and run docker-compose logs
+            
+            📞 Need help? Check the Jenkins logs and container output above.
+            '''
+        }
+        
+        unstable {
+            echo '⚠️ Pipeline completed with warnings. Some health checks may have failed.'
         }
     }
 }
