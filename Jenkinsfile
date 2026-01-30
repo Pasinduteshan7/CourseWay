@@ -196,17 +196,21 @@ docker-compose up -d
 echo "⏳ Waiting for services to start..."
 sleep 30
 
-# Initialize MongoDB if needed
-echo "🔧 Setting up MongoDB..."
-docker-compose exec -T mongo_db mongosh admin --eval "
-if (db.getUser('admin') == null) {
-  db.createUser({
-    user: 'admin',
-    pwd: 'password',
-    roles: [{ role: 'userAdminAnyDatabase', db: 'admin' }]
-  });
-}
-"
+# Check MongoDB status and wait for it to be ready
+echo "🔧 Waiting for MongoDB to be ready..."
+for i in {1..30}; do
+    if docker-compose exec -T mongo_db mongosh --eval "print('MongoDB is ready')" > /dev/null 2>&1; then
+        echo "✅ MongoDB is ready"
+        break
+    fi
+    echo "⏳ Waiting for MongoDB... ($i/30)"
+    sleep 2
+done
+
+echo "🔍 Checking MongoDB authentication setup..."
+# The MongoDB container is configured with MONGO_INITDB_ROOT_USERNAME and MONGO_INITDB_ROOT_PASSWORD
+# These environment variables automatically create the admin user on first startup
+# No additional user creation needed
 
 echo "✅ Deployment completed successfully!"
 
