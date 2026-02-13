@@ -35,14 +35,12 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
-  // Search & Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [sortBy, setSortBy] = useState('popular');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // Review states
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [courseReviews, setCourseReviews] = useState({});
@@ -51,17 +49,13 @@ export default function Dashboard() {
   const [reviewError, setReviewError] = useState(null);
   const [reviewSuccess, setReviewSuccess] = useState(false);
 
-  // Check authentication on mount and when page becomes visible
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
       setIsAuthenticated(!!token);
     };
 
-    // Check on mount
     checkAuth();
-
-    // Listen for storage changes (other tabs)
     const handleStorageChange = () => {
       checkAuth();
     };

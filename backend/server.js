@@ -10,8 +10,7 @@ const Course = require('./models/Course');
 const Lesson = require('./models/Lesson');
 
 const app = express();
-//github ci cd pipeline test
-// Enable CORS
+
 app.use(cors({
   origin: ['http://localhost:5173', 'http://127.0.0.1:5173','http://52.86.2.215:5173'],
   credentials: true,
@@ -19,7 +18,6 @@ app.use(cors({
 
 app.use(express.json());
 
-// Health check endpoint
 app.get('/api/auth/health', (req, res) => {
   console.log('Health check requested');
   if (mongoose.connection.readyState === 1) {
@@ -28,26 +26,22 @@ app.get('/api/auth/health', (req, res) => {
   res.status(503).json({ status: 'unhealthy', message: 'MongoDB not connected' });
 });
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api', reviewsRoutes);
 app.use('/api', coursesRoutes);
 app.use('/api', enrollmentRoutes);
 
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
   process.exit(1);
 });
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err);
   process.exit(1);
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('Received SIGTERM. Shutting down gracefully...');
   mongoose.connection.close(() => {
@@ -63,7 +57,6 @@ mongoose
   .then(() => {
     console.log('Connected to MongoDB successfully');
 
-    // seed multiple sample courses + lessons if none exist
     (async function seedSample() {
       try {
         const count = await Course.countDocuments();

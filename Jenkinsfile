@@ -87,14 +87,12 @@ pipeline {
                 echo '🌩️ Deploying application to AWS EC2...'
                 withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY_ID}", keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
                     sh '''
-                        # Create deployment script with proper environment variables
                         cat > deploy_to_ec2.sh << 'DEPLOY_EOF'
 #!/bin/bash
 set -e
 
 echo "🚀 Starting deployment on AWS EC2..."
 
-# Ensure Docker and Docker Compose are available
 if ! command -v docker &> /dev/null; then
     echo "Installing Docker..."
     curl -fsSL https://get.docker.com -o get-docker.sh
@@ -108,11 +106,9 @@ if ! command -v docker-compose &> /dev/null; then
     sudo chmod +x /usr/local/bin/docker-compose
 fi
 
-# Create application directory
 mkdir -p /home/ubuntu/courseway-app
 cd /home/ubuntu/courseway-app
 
-# Create updated docker-compose.yml with proper environment variables
 cat > docker-compose.yml << 'COMPOSE_EOF'
 version: '3.8'
 
@@ -169,15 +165,12 @@ networks:
     driver: bridge
 COMPOSE_EOF
 
-# Stop existing containers
 echo "🛑 Stopping existing containers..."
 docker-compose down || true
 
-# Force remove any existing containers with our names
 echo "🗑️ Removing any existing containers with our names..."
 docker rm -f mongo_db courseway_backend courseway_frontend 2>/dev/null || true
 
-# Clean up old containers and images
 echo "🧹 Cleaning up old resources..."
 docker container prune -f
 docker image prune -af
@@ -219,13 +212,10 @@ echo "📊 Service Status:"
 docker-compose ps
 DEPLOY_EOF
 
-                        # Make script executable
-                        chmod +x deploy_to_ec2.sh
+chmod +x deploy_to_ec2.sh
                         
-                        # Copy deployment script to EC2
                         scp -i $SSH_KEY_FILE -o StrictHostKeyChecking=no deploy_to_ec2.sh ${EC2_USER}@${EC2_HOST}:/tmp/
                         
-                        # Execute deployment on EC2
                         ssh -i $SSH_KEY_FILE -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} 'bash /tmp/deploy_to_ec2.sh'
                         
                         echo "✅ Application deployed successfully to EC2!"
@@ -239,7 +229,6 @@ DEPLOY_EOF
                 echo '🏥 Performing comprehensive health checks...'
                 withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY_ID}", keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
                     sh '''
-                        # Create health check script
                         cat > health_check.sh << 'HEALTH_EOF'
 #!/bin/bash
 
@@ -339,8 +328,7 @@ echo "=== Container Resource Usage ==="
 docker stats --no-stream --format "table {{.Container}}\\t{{.CPUPerc}}\\t{{.MemUsage}}\\t{{.NetIO}}"
 HEALTH_EOF
 
-                        # Execute health check on EC2
-                        ssh -i $SSH_KEY_FILE -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} 'bash -s' < health_check.sh
+ssh -i $SSH_KEY_FILE -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} 'bash -s' < health_check.sh
                         
                         echo ""
                         echo "🎉 Health checks completed!"

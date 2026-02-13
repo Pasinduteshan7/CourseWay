@@ -19,7 +19,7 @@ export default function Home() {
       <section className="hero">
         <div className="hero-inner">
           <div className="hero-copy">
-            <h1>Achieve your career goals with <span className="brand-strong">CourseWay Plus</span></h1>
+            <h1>Achieve your career goals with <span className="brand-strong">CourseWay Plus kaveesha</span></h1>
             <p className="lead">Subscribe to build job-ready skills from world-class institutions.</p>
             <p className="price">$24/month, cancel anytime</p>
             <div className="hero-cta">
