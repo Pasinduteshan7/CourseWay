@@ -19,12 +19,12 @@ export default function Home() {
       <section className="hero">
         <div className="hero-inner">
           <div className="hero-copy">
-            <h1>Achieve your career goals with <span className="brand-strong">CourseWay Plus </span></h1>
+            <h1>Achieve your career goals with <span className="brand-strong">Pasinduteshan</span></h1>
             <p className="lead">Subscribe to build job-ready skills from world-class institutions.</p>
-            <p className="price">$24/month, cancel anytime</p>
+            <p className="price">cancel anytime</p>
             <div className="hero-cta">
               <Link to="/dashboard" className="btn primary" style={{ textDecoration: 'none', display: 'inline-block' }}>Explore Courses</Link>
-              <a className="hero-link" href="#">or start your free trial</a>
+              <a className="hero-link" href="#">start your free trial</a>
             </div>
           </div>
 
