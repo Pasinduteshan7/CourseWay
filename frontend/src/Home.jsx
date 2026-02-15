@@ -6,7 +6,7 @@ export default function Home() {
     <div className="home-page">
       <header className="site-header">
         <div className="header-inner">
-          <div className="brand">CourseWay</div>
+          <div className="brand">CourseWayy</div>
           <nav className="nav">
             <Link to="/dashboard">Explore</Link>
             <Link to="/">About</Link>
